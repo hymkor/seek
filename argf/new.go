@@ -12,12 +12,12 @@ type Scanner interface {
 	Err() error
 }
 
-type ArgfScanner struct {
-	Files    []string
-	N        int
-	Fd       *os.File
-	Reader   *bufio.Scanner
-	ErrValue error
+type argfScanner struct {
+	files  []string
+	n      int
+	fd     *os.File
+	reader *bufio.Scanner
+	err    error
 }
 
 func NewFiles(files []string) Scanner {
@@ -26,13 +26,13 @@ func NewFiles(files []string) Scanner {
 	}
 	fd, err := os.Open(files[0])
 	if err != nil {
-		return &ArgfScanner{ErrValue: err}
+		return &argfScanner{err: err}
 	}
-	return &ArgfScanner{
-		Files:  files,
-		N:      0,
-		Fd:     fd,
-		Reader: bufio.NewScanner(fd),
+	return &argfScanner{
+		files:  files,
+		n:      0,
+		fd:     fd,
+		reader: bufio.NewScanner(fd),
 	}
 }
 
@@ -40,43 +40,43 @@ func New() Scanner {
 	return NewFiles(os.Args[1:])
 }
 
-func (this *ArgfScanner) Err() error {
-	return this.ErrValue
+func (this *argfScanner) Err() error {
+	return this.err
 }
 
-func (this *ArgfScanner) Text() string {
-	return this.Reader.Text()
+func (this *argfScanner) Text() string {
+	return this.reader.Text()
 }
 
-func (this *ArgfScanner) Bytes() []byte {
-	return this.Reader.Bytes()
+func (this *argfScanner) Bytes() []byte {
+	return this.reader.Bytes()
 }
 
-func (this *ArgfScanner) Scan() bool {
+func (this *argfScanner) Scan() bool {
 	for {
-		if this.ErrValue != nil {
+		if this.err != nil {
 			return false
 		}
-		if this.Reader.Scan() {
+		if this.reader.Scan() {
 			return true
 		}
-		this.ErrValue = this.Reader.Err()
-		if this.ErrValue != nil {
-			this.Fd.Close()
+		this.err = this.reader.Err()
+		if this.err != nil {
+			this.fd.Close()
 			return false
 		}
-		this.ErrValue = this.Fd.Close()
-		if this.ErrValue != nil {
+		this.err = this.fd.Close()
+		if this.err != nil {
 			return false
 		}
-		this.N++
-		if this.N >= len(this.Files) {
+		this.n++
+		if this.n >= len(this.files) {
 			return false
 		}
-		this.Fd, this.ErrValue = os.Open(this.Files[this.N])
-		if this.ErrValue != nil {
+		this.fd, this.err = os.Open(this.files[this.n])
+		if this.err != nil {
 			return false
 		}
-		this.Reader = bufio.NewScanner(this.Fd)
+		this.reader = bufio.NewScanner(this.fd)
 	}
 }
