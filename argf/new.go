@@ -13,11 +13,11 @@ type Scanner interface {
 }
 
 type argfScanner struct {
-	files  []string
-	n      int
-	fd     *os.File
-	reader *bufio.Scanner
-	err    error
+	*bufio.Scanner
+	files []string
+	n     int
+	fd    *os.File
+	err   error
 }
 
 func NewFiles(files []string) Scanner {
@@ -29,10 +29,10 @@ func NewFiles(files []string) Scanner {
 		return &argfScanner{err: err}
 	}
 	return &argfScanner{
-		files:  files,
-		n:      0,
-		fd:     fd,
-		reader: bufio.NewScanner(fd),
+		Scanner: bufio.NewScanner(fd),
+		files:   files,
+		n:       0,
+		fd:      fd,
 	}
 }
 
@@ -44,23 +44,15 @@ func (this *argfScanner) Err() error {
 	return this.err
 }
 
-func (this *argfScanner) Text() string {
-	return this.reader.Text()
-}
-
-func (this *argfScanner) Bytes() []byte {
-	return this.reader.Bytes()
-}
-
 func (this *argfScanner) Scan() bool {
 	for {
 		if this.err != nil {
 			return false
 		}
-		if this.reader.Scan() {
+		if this.Scanner.Scan() {
 			return true
 		}
-		this.err = this.reader.Err()
+		this.err = this.Scanner.Err()
 		if this.err != nil {
 			this.fd.Close()
 			return false
@@ -77,6 +69,6 @@ func (this *argfScanner) Scan() bool {
 		if this.err != nil {
 			return false
 		}
-		this.reader = bufio.NewScanner(this.fd)
+		this.Scanner = bufio.NewScanner(this.fd)
 	}
 }
