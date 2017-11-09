@@ -19,7 +19,7 @@ func main1() error {
 	r := argf.NewFiles(os.Args[2:])
 	for r.Scan() {
 		if rx.MatchString(r.Text()) {
-			fmt.Println(r.Text())
+			fmt.Printf("%s(%d): %s\n", r.Filename(), r.FNR(), r.Text())
 		}
 	}
 	return r.Err()

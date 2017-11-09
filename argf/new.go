@@ -10,6 +10,31 @@ type Scanner interface {
 	Text() string
 	Bytes() []byte
 	Err() error
+	NR() int
+	FNR() int
+	Filename() string
+}
+
+type stdinScanner struct {
+	*bufio.Scanner
+	nr int
+}
+
+func (this *stdinScanner) Scan() bool {
+	this.nr++
+	return this.Scanner.Scan()
+}
+
+func (this *stdinScanner) NR() int {
+	return this.nr
+}
+
+func (this *stdinScanner) FNR() int {
+	return this.nr
+}
+
+func (this *stdinScanner) Filename() string {
+	return "-"
 }
 
 type argfScanner struct {
@@ -18,11 +43,13 @@ type argfScanner struct {
 	n     int
 	fd    *os.File
 	err   error
+	nr    int
+	fnr   int
 }
 
 func NewFiles(files []string) Scanner {
 	if len(files) < 1 {
-		return bufio.NewScanner(os.Stdin)
+		return &stdinScanner{Scanner: bufio.NewScanner(os.Stdin)}
 	}
 	fd, err := os.Open(files[0])
 	if err != nil {
@@ -45,10 +72,12 @@ func (this *argfScanner) Err() error {
 }
 
 func (this *argfScanner) Scan() bool {
+	this.nr++
 	for {
 		if this.err != nil {
 			return false
 		}
+		this.fnr++
 		if this.Scanner.Scan() {
 			return true
 		}
@@ -62,6 +91,7 @@ func (this *argfScanner) Scan() bool {
 			return false
 		}
 		this.n++
+		this.fnr = 0
 		if this.n >= len(this.files) {
 			return false
 		}
@@ -71,4 +101,16 @@ func (this *argfScanner) Scan() bool {
 		}
 		this.Scanner = bufio.NewScanner(this.fd)
 	}
+}
+
+func (this *argfScanner) NR() int {
+	return this.nr
+}
+
+func (this *argfScanner) FNR() int {
+	return this.fnr
+}
+
+func (this *argfScanner) Filename() string {
+	return this.files[this.n]
 }
