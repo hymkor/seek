@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/mattn/go-colorable"
 	"github.com/zetamatta/experimental/argf"
+	"github.com/zetamatta/go-mbcs"
 )
 
 func main1() error {
@@ -21,7 +24,20 @@ func main1() error {
 	out := colorable.NewColorableStdout()
 	r := argf.NewFiles(os.Args[2:])
 	for r.Scan() {
-		text := r.Text()
+		line := r.Bytes()
+
+		var text string
+		if utf8.Valid(line) {
+			text = string(line)
+		} else {
+			var err error
+			text, err = mbcs.AtoU(line)
+			if err != nil {
+				text = err.Error()
+			}
+		}
+		text = strings.Replace(text, "\xEF\xBB\xBF", "", 1)
+
 		m := rx.FindAllStringIndex(text, -1)
 		if m != nil {
 			fmt.Fprintf(out, "\x1B[35;1m%s:\x1B[32;1m%d\x1B[36;1m:\x1B[37;1m", r.Filename(), r.FNR())
