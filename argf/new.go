@@ -2,6 +2,7 @@ package argf
 
 import (
 	"bufio"
+	"io"
 	"os"
 )
 
@@ -37,14 +38,14 @@ func (this *stdinScanner) Filename() string {
 	return "-"
 }
 
-type argfScanner struct {
+type argsScanner struct {
 	*bufio.Scanner
-	files []string
-	n     int
-	fd    *os.File
-	err   error
-	nr    int
-	fnr   int
+	files  []string
+	n      int
+	closer io.Closer
+	err    error
+	nr     int
+	fnr    int
 }
 
 func NewFiles(files []string) Scanner {
@@ -53,13 +54,13 @@ func NewFiles(files []string) Scanner {
 	}
 	fd, err := os.Open(files[0])
 	if err != nil {
-		return &argfScanner{err: err}
+		return &argsScanner{err: err}
 	}
-	return &argfScanner{
+	return &argsScanner{
 		Scanner: bufio.NewScanner(fd),
 		files:   files,
 		n:       0,
-		fd:      fd,
+		closer:  fd,
 	}
 }
 
@@ -67,11 +68,11 @@ func New() Scanner {
 	return NewFiles(os.Args[1:])
 }
 
-func (this *argfScanner) Err() error {
+func (this *argsScanner) Err() error {
 	return this.err
 }
 
-func (this *argfScanner) Scan() bool {
+func (this *argsScanner) Scan() bool {
 	this.nr++
 	for {
 		if this.err != nil {
@@ -83,34 +84,41 @@ func (this *argfScanner) Scan() bool {
 		}
 		this.err = this.Scanner.Err()
 		if this.err != nil {
-			this.fd.Close()
+			if this.closer != nil {
+				this.closer.Close()
+			}
 			return false
 		}
-		this.err = this.fd.Close()
-		if this.err != nil {
-			return false
+		if this.closer != nil {
+			this.err = this.closer.Close()
+			this.closer = nil
+			if this.err != nil {
+				return false
+			}
 		}
 		this.n++
 		this.fnr = 0
 		if this.n >= len(this.files) {
 			return false
 		}
-		this.fd, this.err = os.Open(this.files[this.n])
-		if this.err != nil {
+		fd, err := os.Open(this.files[this.n])
+		if err != nil {
+			this.err = err
 			return false
 		}
-		this.Scanner = bufio.NewScanner(this.fd)
+		this.closer = fd
+		this.Scanner = bufio.NewScanner(fd)
 	}
 }
 
-func (this *argfScanner) NR() int {
+func (this *argsScanner) NR() int {
 	return this.nr
 }
 
-func (this *argfScanner) FNR() int {
+func (this *argsScanner) FNR() int {
 	return this.fnr
 }
 
-func (this *argfScanner) Filename() string {
+func (this *argsScanner) Filename() string {
 	return this.files[this.n]
 }
