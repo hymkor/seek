@@ -6,39 +6,7 @@ import (
 	"os"
 )
 
-type Scanner interface {
-	Scan() bool
-	Text() string
-	Bytes() []byte
-	Err() error
-	NR() int
-	FNR() int
-	Filename() string
-}
-
-type stdinScanner struct {
-	*bufio.Scanner
-	nr int
-}
-
-func (this *stdinScanner) Scan() bool {
-	this.nr++
-	return this.Scanner.Scan()
-}
-
-func (this *stdinScanner) NR() int {
-	return this.nr
-}
-
-func (this *stdinScanner) FNR() int {
-	return this.nr
-}
-
-func (this *stdinScanner) Filename() string {
-	return "-"
-}
-
-type argsScanner struct {
+type scanner struct {
 	*bufio.Scanner
 	files  []string
 	n      int
@@ -48,12 +16,17 @@ type argsScanner struct {
 	fnr    int
 }
 
-func NewFiles(files []string) Scanner {
+func NewFiles(files []string) *scanner {
 	if len(files) < 1 {
-		return &stdinScanner{Scanner: bufio.NewScanner(os.Stdin)}
+		return &scanner{
+			Scanner: bufio.NewScanner(os.Stdin),
+			files:   []string{"-"},
+			n:       0,
+			closer:  nil,
+		}
 	}
 	if files[0] == "-" {
-		return &argsScanner{
+		return &scanner{
 			Scanner: bufio.NewScanner(os.Stdin),
 			files:   files,
 			n:       0,
@@ -62,9 +35,9 @@ func NewFiles(files []string) Scanner {
 	}
 	fd, err := os.Open(files[0])
 	if err != nil {
-		return &argsScanner{err: err}
+		return &scanner{err: err}
 	}
-	return &argsScanner{
+	return &scanner{
 		Scanner: bufio.NewScanner(fd),
 		files:   files,
 		n:       0,
@@ -72,15 +45,15 @@ func NewFiles(files []string) Scanner {
 	}
 }
 
-func New() Scanner {
+func New() *scanner {
 	return NewFiles(os.Args[1:])
 }
 
-func (this *argsScanner) Err() error {
+func (this *scanner) Err() error {
 	return this.err
 }
 
-func (this *argsScanner) Scan() bool {
+func (this *scanner) Scan() bool {
 	this.nr++
 	for {
 		if this.err != nil {
@@ -124,14 +97,14 @@ func (this *argsScanner) Scan() bool {
 	}
 }
 
-func (this *argsScanner) NR() int {
+func (this *scanner) NR() int {
 	return this.nr
 }
 
-func (this *argsScanner) FNR() int {
+func (this *scanner) FNR() int {
 	return this.fnr
 }
 
-func (this *argsScanner) Filename() string {
+func (this *scanner) Filename() string {
 	return this.files[this.n]
 }
