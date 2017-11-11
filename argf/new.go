@@ -52,6 +52,14 @@ func NewFiles(files []string) Scanner {
 	if len(files) < 1 {
 		return &stdinScanner{Scanner: bufio.NewScanner(os.Stdin)}
 	}
+	if files[0] == "-" {
+		return &argsScanner{
+			Scanner: bufio.NewScanner(os.Stdin),
+			files:   files,
+			n:       0,
+			closer:  nil,
+		}
+	}
 	fd, err := os.Open(files[0])
 	if err != nil {
 		return &argsScanner{err: err}
@@ -101,13 +109,18 @@ func (this *argsScanner) Scan() bool {
 		if this.n >= len(this.files) {
 			return false
 		}
-		fd, err := os.Open(this.files[this.n])
-		if err != nil {
-			this.err = err
-			return false
+		if this.files[this.n] == "-" {
+			this.closer = nil
+			this.Scanner = bufio.NewScanner(os.Stdin)
+		} else {
+			fd, err := os.Open(this.files[this.n])
+			if err != nil {
+				this.err = err
+				return false
+			}
+			this.closer = fd
+			this.Scanner = bufio.NewScanner(fd)
 		}
-		this.closer = fd
-		this.Scanner = bufio.NewScanner(fd)
 	}
 }
 
