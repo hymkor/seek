@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -12,16 +13,28 @@ import (
 	"github.com/zetamatta/go-mbcs"
 )
 
+var ignoreCase = flag.Bool("i", false, "ignore case")
+
 func main1() error {
-	if len(os.Args) < 2 {
-		return fmt.Errorf("Usage: %s REGEXP Files...", os.Args[0])
+	flag.Parse()
+	args := flag.Args()
+
+	if len(args) < 1 {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags...] REGEXP Files...\n", os.Args[0])
+		flag.PrintDefaults()
+		return nil
 	}
-	rx, err := regexp.Compile(os.Args[1])
+	var pattern string = args[0]
+	if *ignoreCase {
+		pattern = "(?i)" + pattern
+	}
+
+	rx, err := regexp.Compile(pattern)
 	if err != nil {
 		return err
 	}
 	out := colorable.NewColorableStdout()
-	r := argf.NewFiles(os.Args[2:])
+	r := argf.NewFiles(args[1:])
 	for r.Scan() {
 		line := r.Bytes()
 
