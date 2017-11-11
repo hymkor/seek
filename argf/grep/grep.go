@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -15,7 +14,7 @@ import (
 
 func main1() error {
 	if len(os.Args) < 2 {
-		return errors.New("Usage: grep.exe REGEXP Files...")
+		return fmt.Errorf("Usage: %s REGEXP Files...", os.Args[0])
 	}
 	rx, err := regexp.Compile(os.Args[1])
 	if err != nil {
