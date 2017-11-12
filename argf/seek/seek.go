@@ -13,6 +13,16 @@ import (
 	"github.com/zetamatta/go-mbcs"
 )
 
+const (
+	UTF8BOM = "\xEF\xBB\xBF"
+
+	MAGENTA = "\x1B[35;1m"
+	GREEN   = "\x1B[32;1m"
+	AQUA    = "\x1B[36;1m"
+	WHITE   = "\x1B[37;1m"
+	RED     = "\x1B[31;1m"
+)
+
 var ignoreCase = flag.Bool("i", false, "ignore case")
 
 func main1() error {
@@ -48,14 +58,14 @@ func main1() error {
 				text = err.Error()
 			}
 		}
-		text = strings.Replace(text, "\xEF\xBB\xBF", "", 1)
+		text = strings.Replace(text, UTF8BOM, "", 1)
 
 		m := rx.FindAllStringIndex(text, -1)
 		if m != nil {
-			fmt.Fprintf(out, "\x1B[35;1m%s:\x1B[32;1m%d\x1B[36;1m:\x1B[37;1m", r.Filename(), r.FNR())
+			fmt.Fprintf(out, MAGENTA+"%s"+WHITE+":"+GREEN+"%d"+AQUA+":"+WHITE, r.Filename(), r.FNR())
 			last := 0
 			for i := 0; i < len(m); i++ {
-				fmt.Fprintf(out, "%s\x1B[31;1m%s\x1B[37;1m",
+				fmt.Fprintf(out, "%s"+RED+"%s"+WHITE,
 					text[last:m[i][0]],
 					text[m[i][0]:m[i][1]])
 				last = m[i][1]
