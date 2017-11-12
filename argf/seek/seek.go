@@ -21,6 +21,8 @@ const (
 	AQUA    = "\x1B[36;1m"
 	WHITE   = "\x1B[37;1m"
 	RED     = "\x1B[31;1m"
+
+	RESET = "\x1B[0m"
 )
 
 var ignoreCase = flag.Bool("i", false, "ignore case")
@@ -45,6 +47,7 @@ func main1() error {
 	}
 	out := colorable.NewColorableStdout()
 	r := argf.NewFiles(args[1:])
+	needReset := false
 	for r.Scan() {
 		line := r.Bytes()
 
@@ -71,7 +74,11 @@ func main1() error {
 				last = m[i][1]
 			}
 			fmt.Fprintln(out, text[last:])
+			needReset = true
 		}
+	}
+	if needReset {
+		fmt.Fprint(out, RESET)
 	}
 	return r.Err()
 }
