@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type scanner struct {
@@ -25,6 +26,15 @@ func NewFiles(files []string) *scanner {
 			closer:  nil,
 		}
 	}
+	files_ := make([]string, 0, len(files)*2)
+	for _, file1 := range files {
+		if matches, err := filepath.Glob(file1); err == nil && matches != nil {
+			files_ = append(files_, matches...)
+		} else {
+			files_ = append(files_, file1)
+		}
+	}
+	files = files_
 	if files[0] == "-" {
 		return &scanner{
 			Scanner: bufio.NewScanner(os.Stdin),
