@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -26,6 +27,7 @@ const (
 )
 
 var ignoreCase = flag.Bool("i", false, "ignore case")
+var recursive = flag.Bool("r", false, "recursive")
 
 func main1() error {
 	flag.Parse()
@@ -46,7 +48,26 @@ func main1() error {
 		return err
 	}
 	out := colorable.NewColorableStdout()
-	r := argf.NewFiles(args[1:])
+
+	var files []string
+	if *recursive {
+		for _, arg1 := range args[1:] {
+			stat1, err := os.Stat(arg1)
+			if err == nil && stat1.IsDir() {
+				filepath.Walk(arg1, func(path string, info os.FileInfo, err error) error {
+					if !info.IsDir() {
+						files = append(files, path)
+					}
+					return nil
+				})
+			} else {
+				files = append(files, arg1)
+			}
+		}
+	} else {
+		files = args[1:]
+	}
+	r := argf.NewFiles(files)
 	needReset := false
 	for r.Scan() {
 		line := r.Bytes()
