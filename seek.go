@@ -10,8 +10,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattn/go-colorable"
-	"github.com/zetamatta/experimental/argf"
 	"github.com/zetamatta/go-mbcs"
+	"github.com/zetamatta/seek/argf"
 )
 
 const (
