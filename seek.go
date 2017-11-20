@@ -65,7 +65,14 @@ func main1() error {
 			}
 		}
 	} else {
-		files = args[1:]
+		for _, arg1 := range args[1:] {
+			stat1, err := os.Stat(arg1)
+			if err == nil && stat1.IsDir() {
+				fmt.Fprintf(os.Stderr, "%s is directory\n", arg1)
+			} else {
+				files = append(files, arg1)
+			}
+		}
 	}
 	r := argf.NewFiles(files)
 	needReset := false
