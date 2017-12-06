@@ -2,6 +2,7 @@ package argf
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"os"
 )
@@ -28,12 +29,20 @@ func NewFiles(files []string) *scanner {
 	files_ := make([]string, 0, len(files)*2)
 	for _, file1 := range files {
 		if matches, err := glob(file1); err == nil && matches != nil {
-			files_ = append(files_, matches...)
+			for _, m := range matches {
+				stat1, err := os.Stat(m)
+				if err == nil && !stat1.IsDir() {
+					files_ = append(files_, m)
+				}
+			}
 		} else {
 			files_ = append(files_, file1)
 		}
 	}
 	files = files_
+	if len(files) <= 0 {
+		return &scanner{err: errors.New("no files matched")}
+	}
 	if files[0] == "-" {
 		return &scanner{
 			Scanner: bufio.NewScanner(os.Stdin),
