@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -76,6 +77,7 @@ func main1() error {
 	}
 	r := argf.NewFiles(files)
 	needReset := false
+	found := false
 	for r.Scan() {
 		line := r.Bytes()
 
@@ -93,6 +95,7 @@ func main1() error {
 
 		m := rx.FindAllStringIndex(text, -1)
 		if m != nil {
+			found = true
 			fmt.Fprintf(out, MAGENTA+"%s"+WHITE+":"+GREEN+"%d"+AQUA+":"+WHITE, r.Filename(), r.FNR())
 			last := 0
 			for i := 0; i < len(m); i++ {
@@ -108,7 +111,14 @@ func main1() error {
 	if needReset {
 		fmt.Fprint(out, RESET)
 	}
-	return r.Err()
+	if r.Err() != nil {
+		return r.Err()
+	}
+	if found {
+		return nil
+	} else {
+		return errors.New("Not found")
+	}
 }
 
 func main() {
