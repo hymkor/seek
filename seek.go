@@ -13,6 +13,7 @@ import (
 	"github.com/mattn/go-colorable"
 	"github.com/zetamatta/go-mbcs"
 	"github.com/zetamatta/seek/argf"
+	"github.com/zetamatta/seek/starstar"
 )
 
 const (
@@ -37,6 +38,7 @@ func main1() error {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags...] REGEXP Files...\n", os.Args[0])
 		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, " Files: **/*.go ... find *.go files recursively.\n")
 		return nil
 	}
 	var pattern string = args[0]
@@ -67,8 +69,9 @@ func main1() error {
 		}
 	} else {
 		for _, arg1 := range args[1:] {
-			stat1, err := os.Stat(arg1)
-			if err == nil && stat1.IsDir() {
+			if addfiles, err := starstar.Expand(arg1); err == nil && addfiles != nil {
+				files = append(files, addfiles...)
+			} else if stat1, err := os.Stat(arg1); err == nil && stat1.IsDir() {
 				fmt.Fprintf(os.Stderr, "%s is directory\n", arg1)
 			} else {
 				files = append(files, arg1)
