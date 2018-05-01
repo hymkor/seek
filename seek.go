@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/zetamatta/go-mbcs"
 	"github.com/zetamatta/seek/argf"
 	"github.com/zetamatta/seek/starstar"
@@ -50,7 +52,12 @@ func main1() error {
 	if err != nil {
 		return err
 	}
-	out := colorable.NewColorableStdout()
+	var out io.Writer
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		out = colorable.NewColorableStdout()
+	}else{
+		out = colorable.NewNonColorable(os.Stdout)
+	}
 
 	var files []string
 	if *recursive {
