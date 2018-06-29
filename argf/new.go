@@ -3,43 +3,46 @@ package argf
 import (
 	"bufio"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
 type scanner struct {
 	*bufio.Scanner
-	files  []string
-	n      int
-	closer io.Closer
-	err    error
-	nr     int
-	fnr    int
+	files   []string
+	n       int
+	fd      io.ReadCloser
+	err     error
+	nr      int
+	fnr     int
+	OnError func(error) error
 }
 
 func NewFiles(files []string) *scanner {
 	if len(files) < 1 {
 		files = []string{"-"}
 	}
-	files_ := make([]string, 0, len(files)*2)
+	_files := make([]string, 0, len(files)*2)
 	for _, file1 := range files {
 		if file1 == "-" {
-			files_ = append(files_, file1)
+			_files = append(_files, file1)
 		} else if matches, err := glob(file1); err == nil && matches != nil {
 			for _, m := range matches {
 				stat1, err := os.Stat(m)
 				if err == nil && !stat1.IsDir() {
-					files_ = append(files_, m)
+					_files = append(_files, m)
 				}
 			}
 		} else {
-			files_ = append(files_, file1)
+			_files = append(_files, file1)
 		}
 	}
 	return &scanner{
 		Scanner: nil,
-		files:   files_,
+		files:   _files,
 		n:       -1,
-		closer:  nil,
+		fd:      nil,
+		OnError: func(err error) error { return err },
 	}
 }
 
@@ -52,6 +55,9 @@ func (this *scanner) Err() error {
 }
 
 func (this *scanner) Scan() bool {
+	if this.err != nil {
+		return false
+	}
 	this.nr++
 	for {
 		if this.Scanner == nil {
@@ -61,36 +67,35 @@ func (this *scanner) Scan() bool {
 				return false
 			}
 			if this.files[this.n] == "-" {
-				this.closer = nil
-				this.Scanner = bufio.NewScanner(os.Stdin)
+				this.fd = ioutil.NopCloser(os.Stdin)
 			} else {
 				fd, err := os.Open(this.files[this.n])
 				if err != nil {
-					this.err = err
-					return false
+					if err := this.OnError(err); err != nil {
+						this.err = err
+						return false
+					} else {
+						continue
+					}
 				}
-				this.closer = fd
-				this.Scanner = bufio.NewScanner(fd)
+				this.fd = fd
 			}
-		}
-		if this.err != nil {
-			return false
+			this.Scanner = bufio.NewScanner(this.fd)
 		}
 		this.fnr++
 		if this.Scanner.Scan() {
 			return true
 		}
-		this.err = this.Scanner.Err()
-		if this.err != nil {
-			if this.closer != nil {
-				this.closer.Close()
+		if err := this.Scanner.Err(); err != nil {
+			if err := this.OnError(err); err != nil {
+				this.fd.Close()
+				this.err = err
+				return false
 			}
-			return false
 		}
-		if this.closer != nil {
-			this.err = this.closer.Close()
-			this.closer = nil
-			if this.err != nil {
+		if err := this.fd.Close(); err != nil {
+			if err := this.OnError(err); err != nil {
+				this.err = err
 				return false
 			}
 		}
