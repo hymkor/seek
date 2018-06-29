@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zetamatta/experimental/argf"
+	"github.com/zetamatta/seek/argf"
 )
 
 func main() {
