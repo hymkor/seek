@@ -2,7 +2,6 @@ package argf
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"os"
 )
@@ -19,16 +18,13 @@ type scanner struct {
 
 func NewFiles(files []string) *scanner {
 	if len(files) < 1 {
-		return &scanner{
-			Scanner: bufio.NewScanner(os.Stdin),
-			files:   []string{"-"},
-			n:       0,
-			closer:  nil,
-		}
+		files = []string{"-"}
 	}
 	files_ := make([]string, 0, len(files)*2)
 	for _, file1 := range files {
-		if matches, err := glob(file1); err == nil && matches != nil {
+		if file1 == "-" {
+			files_ = append(files_, file1)
+		} else if matches, err := glob(file1); err == nil && matches != nil {
 			for _, m := range matches {
 				stat1, err := os.Stat(m)
 				if err == nil && !stat1.IsDir() {
@@ -39,27 +35,11 @@ func NewFiles(files []string) *scanner {
 			files_ = append(files_, file1)
 		}
 	}
-	files = files_
-	if len(files) <= 0 {
-		return &scanner{err: errors.New("no files matched")}
-	}
-	if files[0] == "-" {
-		return &scanner{
-			Scanner: bufio.NewScanner(os.Stdin),
-			files:   files,
-			n:       0,
-			closer:  nil,
-		}
-	}
-	fd, err := os.Open(files[0])
-	if err != nil {
-		return &scanner{err: err}
-	}
 	return &scanner{
-		Scanner: bufio.NewScanner(fd),
-		files:   files,
-		n:       0,
-		closer:  fd,
+		Scanner: nil,
+		files:   files_,
+		n:       -1,
+		closer:  nil,
 	}
 }
 
@@ -74,6 +54,25 @@ func (this *scanner) Err() error {
 func (this *scanner) Scan() bool {
 	this.nr++
 	for {
+		if this.Scanner == nil {
+			this.n++
+			this.fnr = 0
+			if this.n >= len(this.files) {
+				return false
+			}
+			if this.files[this.n] == "-" {
+				this.closer = nil
+				this.Scanner = bufio.NewScanner(os.Stdin)
+			} else {
+				fd, err := os.Open(this.files[this.n])
+				if err != nil {
+					this.err = err
+					return false
+				}
+				this.closer = fd
+				this.Scanner = bufio.NewScanner(fd)
+			}
+		}
 		if this.err != nil {
 			return false
 		}
@@ -95,23 +94,7 @@ func (this *scanner) Scan() bool {
 				return false
 			}
 		}
-		this.n++
-		this.fnr = 0
-		if this.n >= len(this.files) {
-			return false
-		}
-		if this.files[this.n] == "-" {
-			this.closer = nil
-			this.Scanner = bufio.NewScanner(os.Stdin)
-		} else {
-			fd, err := os.Open(this.files[this.n])
-			if err != nil {
-				this.err = err
-				return false
-			}
-			this.closer = fd
-			this.Scanner = bufio.NewScanner(fd)
-		}
+		this.Scanner = nil
 	}
 }
 
