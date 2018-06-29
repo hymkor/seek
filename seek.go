@@ -55,7 +55,7 @@ func main1() error {
 	var out io.Writer
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		out = colorable.NewColorableStdout()
-	}else{
+	} else {
 		out = colorable.NewNonColorable(os.Stdout)
 	}
 
@@ -86,6 +86,10 @@ func main1() error {
 		}
 	}
 	r := argf.NewFiles(files)
+	r.OnError = func(err error) error {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return nil
+	}
 	needReset := false
 	found := false
 	for r.Scan() {
