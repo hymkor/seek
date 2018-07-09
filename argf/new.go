@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 type scanner struct {
@@ -71,6 +73,7 @@ func (this *scanner) Scan() bool {
 			} else {
 				fd, err := os.Open(this.files[this.n])
 				if err != nil {
+					err = errors.Wrap(err, this.files[this.n])
 					if err := this.OnError(err); err != nil {
 						this.err = err
 						return false
@@ -87,6 +90,7 @@ func (this *scanner) Scan() bool {
 			return true
 		}
 		if err := this.Scanner.Err(); err != nil {
+			err = errors.Wrap(err, this.files[this.n])
 			if err := this.OnError(err); err != nil {
 				this.fd.Close()
 				this.err = err
@@ -94,6 +98,7 @@ func (this *scanner) Scan() bool {
 			}
 		}
 		if err := this.fd.Close(); err != nil {
+			err = errors.Wrap(err, this.files[this.n])
 			if err := this.OnError(err); err != nil {
 				this.err = err
 				return false
