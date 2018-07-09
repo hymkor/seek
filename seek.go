@@ -48,6 +48,9 @@ func main1() error {
 		pattern = "(?i)" + pattern
 	}
 
+	pattern = strings.Replace(pattern,`\<`,`\b`,-1)
+	pattern = strings.Replace(pattern,`\>`,`\b`,-1)
+
 	rx, err := regexp.Compile(pattern)
 	if err != nil {
 		return err
