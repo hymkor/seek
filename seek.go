@@ -9,11 +9,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
-	"github.com/zetamatta/go-mbcs"
 	"github.com/zetamatta/seek/argf"
 	"github.com/zetamatta/seek/starstar"
 )
@@ -29,6 +27,11 @@ const (
 
 	RESET = "\x1B[0m"
 )
+
+type scanner interface {
+	Text() string
+	Bytes() []byte
+}
 
 var ignoreCase = flag.Bool("i", false, "ignore case")
 var recursive = flag.Bool("r", false, "recursive")
@@ -48,8 +51,8 @@ func main1() error {
 		pattern = "(?i)" + pattern
 	}
 
-	pattern = strings.Replace(pattern,`\<`,`\b`,-1)
-	pattern = strings.Replace(pattern,`\>`,`\b`,-1)
+	pattern = strings.Replace(pattern, `\<`, `\b`, -1)
+	pattern = strings.Replace(pattern, `\>`, `\b`, -1)
 
 	rx, err := regexp.Compile(pattern)
 	if err != nil {
@@ -96,18 +99,7 @@ func main1() error {
 	needReset := false
 	found := false
 	for r.Scan() {
-		line := r.Bytes()
-
-		var text string
-		if utf8.Valid(line) {
-			text = string(line)
-		} else {
-			var err error
-			text, err = mbcs.AtoU(line)
-			if err != nil {
-				text = err.Error()
-			}
-		}
+		text := readline(r)
 		text = strings.Replace(text, UTF8BOM, "", 1)
 
 		m := rx.FindAllStringIndex(text, -1)
