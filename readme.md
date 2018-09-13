@@ -1,11 +1,13 @@
-seek - color-grep for ansi/utf8 (Windows)
-=========================================
+seek - color-grep 
+=================
 
 ```
-Usage: seek.exe [flags...] REGEXP Files...
+Usage: seek [flags...] REGEXP Files...
   -i    ignore case
   -r    recursive
 ```
+
+On Windows
 
 * If the line is valid as UTF8, seek.exe consider the line encoded by UTF8.
 * If the line is invalid as UTF8, seek.exe conider the line encoded by ANSI(the encoding of the current code page.)
