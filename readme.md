@@ -3,6 +3,8 @@ seek - color-grep
 
 ```
 Usage: seek [flags...] REGEXP Files...
+  -html
+        output html
   -i    ignore case
   -r    recursive
 ```
