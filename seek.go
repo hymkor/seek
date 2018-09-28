@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"html"
 	"io"
 	"os"
 	"path/filepath"
@@ -35,6 +36,7 @@ type scanner interface {
 
 var ignoreCase = flag.Bool("i", false, "ignore case")
 var recursive = flag.Bool("r", false, "recursive")
+var outputHtml = flag.Bool("html", false, "output html")
 
 func main1() error {
 	flag.Parse()
@@ -58,11 +60,50 @@ func main1() error {
 	if err != nil {
 		return err
 	}
-	var out io.Writer
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		out = colorable.NewColorableStdout()
+	var output func(fname string, line int, text string, m [][]int)
+	if *outputHtml {
+		fmt.Println("<html><body style=\"background-color:lightgray\">")
+		output = func(fname string, line int, text string, m [][]int) {
+			fmt.Printf(`<div><span style="color:magenta">%s</span>:<span style="color:green">%d</span><span style="color:aqua">:</span>`,
+				html.EscapeString(fname), line)
+			last := 0
+			for i := 0; i < len(m); i++ {
+				fmt.Printf(`%s<span style="color:red">%s</span>`,
+					html.EscapeString(text[last:m[i][0]]),
+					html.EscapeString(text[m[i][0]:m[i][1]]))
+				last = m[i][1]
+			}
+			fmt.Printf("%s</div>\n",
+				html.EscapeString(text[last:]))
+		}
+		defer func() {
+			fmt.Println("</body></html>")
+		}()
 	} else {
-		out = colorable.NewNonColorable(os.Stdout)
+		var out io.Writer
+		if isatty.IsTerminal(os.Stdout.Fd()) {
+			out = colorable.NewColorableStdout()
+		} else {
+			out = colorable.NewNonColorable(os.Stdout)
+		}
+		needReset := false
+		output = func(fname string, line int, text string, m [][]int) {
+			fmt.Fprintf(out, MAGENTA+"%s"+WHITE+":"+GREEN+"%d"+AQUA+":"+WHITE, fname, line)
+			last := 0
+			for i := 0; i < len(m); i++ {
+				fmt.Fprintf(out, "%s"+RED+"%s"+WHITE,
+					text[last:m[i][0]],
+					text[m[i][0]:m[i][1]])
+				last = m[i][1]
+			}
+			fmt.Fprintln(out, text[last:])
+			needReset = true
+		}
+		defer func() {
+			if needReset {
+				fmt.Fprint(out, RESET)
+			}
+		}()
 	}
 
 	var files []string
@@ -96,7 +137,7 @@ func main1() error {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return nil
 	}
-	needReset := false
+
 	found := false
 	for r.Scan() {
 		text := readline(r)
@@ -105,20 +146,8 @@ func main1() error {
 		m := rx.FindAllStringIndex(text, -1)
 		if m != nil {
 			found = true
-			fmt.Fprintf(out, MAGENTA+"%s"+WHITE+":"+GREEN+"%d"+AQUA+":"+WHITE, r.Filename(), r.FNR())
-			last := 0
-			for i := 0; i < len(m); i++ {
-				fmt.Fprintf(out, "%s"+RED+"%s"+WHITE,
-					text[last:m[i][0]],
-					text[m[i][0]:m[i][1]])
-				last = m[i][1]
-			}
-			fmt.Fprintln(out, text[last:])
-			needReset = true
+			output(r.Filename(), r.FNR(), text, m)
 		}
-	}
-	if needReset {
-		fmt.Fprint(out, RESET)
 	}
 	if r.Err() != nil {
 		return r.Err()
