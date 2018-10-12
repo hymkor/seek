@@ -140,7 +140,7 @@ func main1() error {
 
 	found := false
 	for r.Scan() {
-		text := readline(r)
+		text := r.Text()
 		text = strings.Replace(text, UTF8BOM, "", 1)
 
 		m := rx.FindAllStringIndex(text, -1)

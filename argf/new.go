@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/zetamatta/go-texts/mbcs"
+
 	"github.com/pkg/errors"
 )
 
@@ -83,7 +85,8 @@ func (this *scanner) Scan() bool {
 				}
 				this.fd = fd
 			}
-			this.Scanner = bufio.NewScanner(this.fd)
+			this.Scanner = bufio.NewScanner(
+				mbcs.NewAutoDetectReader(this.fd, mbcs.ConsoleCP()))
 		}
 		this.fnr++
 		if this.Scanner.Scan() {
