@@ -6,9 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/zetamatta/go-texts/mbcs"
-
 	"github.com/pkg/errors"
+
+	"github.com/zetamatta/go-texts/mbcs"
+	"github.com/zetamatta/seek/starstar"
 )
 
 type scanner struct {
@@ -30,7 +31,7 @@ func NewFiles(files []string) *scanner {
 	for _, file1 := range files {
 		if file1 == "-" {
 			_files = append(_files, file1)
-		} else if matches, err := glob(file1); err == nil && matches != nil {
+		} else if matches, err := starstar.Expand(file1); err == nil && matches != nil {
 			for _, m := range matches {
 				stat1, err := os.Stat(m)
 				if err == nil && !stat1.IsDir() {
