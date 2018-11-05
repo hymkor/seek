@@ -13,8 +13,9 @@ import (
 
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
+	"github.com/mattn/go-zglob"
+
 	"github.com/zetamatta/seek/argf"
-	"github.com/zetamatta/seek/starstar"
 )
 
 const (
@@ -123,7 +124,7 @@ func main1() error {
 		}
 	} else {
 		for _, arg1 := range args[1:] {
-			if addfiles, err := starstar.Expand(arg1); err == nil && addfiles != nil {
+			if addfiles, err := zglob.Glob(arg1); err == nil && addfiles != nil {
 				files = append(files, addfiles...)
 			} else if stat1, err := os.Stat(arg1); err == nil && stat1.IsDir() {
 				fmt.Fprintf(os.Stderr, "%s is directory\n", arg1)
