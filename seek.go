@@ -13,6 +13,8 @@ import (
 
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
+	"github.com/mattn/go-zglob"
+
 	"github.com/zetamatta/seek/argf"
 )
 
@@ -121,7 +123,15 @@ func main1() error {
 			}
 		}
 	} else {
-		files = args[1:]
+		for _, arg1 := range args[1:] {
+			if addfiles, err := zglob.Glob(arg1); err == nil && addfiles != nil && len(addfiles) > 0 {
+				files = append(files, addfiles...)
+			} else if stat1, err := os.Stat(arg1); err == nil && stat1.IsDir() {
+				fmt.Fprintf(os.Stderr, "%s is directory\n", arg1)
+			} else {
+				files = append(files, arg1)
+			}
+		}
 	}
 	r := argf.NewFiles(files)
 	r.OnError = func(err error) error {
