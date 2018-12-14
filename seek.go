@@ -125,7 +125,12 @@ func main1() error {
 	} else {
 		for _, arg1 := range args[1:] {
 			if addfiles, err := zglob.Glob(arg1); err == nil && addfiles != nil && len(addfiles) > 0 {
-				files = append(files, addfiles...)
+				for _,file1 := range addfiles{
+					stat,err := os.Stat(file1)
+					if err == nil && ! stat.IsDir() {
+						files = append(files, file1)
+					}
+				}
 			} else if stat1, err := os.Stat(arg1); err == nil && stat1.IsDir() {
 				fmt.Fprintf(os.Stderr, "%s is directory\n", arg1)
 			} else {
