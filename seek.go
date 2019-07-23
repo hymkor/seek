@@ -38,6 +38,8 @@ type scanner interface {
 var ignoreCase = flag.Bool("i", false, "ignore case")
 var recursive = flag.Bool("r", false, "recursive")
 var outputHtml = flag.Bool("html", false, "output html")
+var flagBefore = flag.Int("B", 0, "print N lines before matching lines")
+var flagAfter = flag.Int("A", 0, "print N lines after matching lines")
 
 func main1() error {
 	flag.Parse()
@@ -125,9 +127,9 @@ func main1() error {
 	} else {
 		for _, arg1 := range args[1:] {
 			if addfiles, err := zglob.Glob(arg1); err == nil && addfiles != nil && len(addfiles) > 0 {
-				for _,file1 := range addfiles{
-					stat,err := os.Stat(file1)
-					if err == nil && ! stat.IsDir() {
+				for _, file1 := range addfiles {
+					stat, err := os.Stat(file1)
+					if err == nil && !stat.IsDir() {
 						files = append(files, file1)
 					}
 				}
@@ -145,6 +147,8 @@ func main1() error {
 	}
 
 	found := false
+	beforeBuffer := make([]string, 0, *flagBefore)
+	afterCount := 0
 	for r.Scan() {
 		text := r.Text()
 		text = strings.Replace(text, UTF8BOM, "", 1)
@@ -152,7 +156,22 @@ func main1() error {
 		m := rx.FindAllStringIndex(text, -1)
 		if m != nil {
 			found = true
+			// for `-B n`
+			for i, s := range beforeBuffer {
+				output(r.Filename(), r.FNR()-len(beforeBuffer)+i, s, [][]int{})
+			}
+			beforeBuffer = beforeBuffer[:0]
+
 			output(r.Filename(), r.FNR(), text, m)
+			afterCount = *flagAfter
+		} else if afterCount > 0 {
+			afterCount--
+			output(r.Filename(), r.FNR(), text, [][]int{})
+		} else if *flagBefore > 0 {
+			beforeBuffer = append(beforeBuffer, text)
+			if len(beforeBuffer) > *flagBefore {
+				beforeBuffer = beforeBuffer[1:]
+			}
 		}
 	}
 	if r.Err() != nil {
