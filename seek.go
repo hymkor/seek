@@ -40,6 +40,7 @@ var recursive = flag.Bool("r", false, "recursive")
 var outputHtml = flag.Bool("html", false, "output html")
 var flagBefore = flag.Int("B", 0, "print N lines before matching lines")
 var flagAfter = flag.Int("A", 0, "print N lines after matching lines")
+var flagNoColor = flag.Bool("no-color", false, "no color")
 
 func main1() error {
 	flag.Parse()
@@ -86,8 +87,10 @@ func main1() error {
 		var out io.Writer
 		if isatty.IsTerminal(os.Stdout.Fd()) {
 			out = colorable.NewColorableStdout()
-		} else {
+		} else if *flagNoColor {
 			out = colorable.NewNonColorable(os.Stdout)
+		} else {
+			out = os.Stdout
 		}
 		needReset := false
 		output = func(fname string, line int, text string, m [][]int) {
