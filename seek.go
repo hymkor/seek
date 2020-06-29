@@ -30,11 +30,6 @@ const (
 	RESET = "\x1B[0m"
 )
 
-type scanner interface {
-	Text() string
-	Bytes() []byte
-}
-
 type FlagStrings []string
 
 func (f *FlagStrings) String() string {
@@ -231,5 +226,4 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	os.Exit(0)
 }
