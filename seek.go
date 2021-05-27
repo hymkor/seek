@@ -111,12 +111,12 @@ func main1() error {
 		}()
 	} else {
 		var out io.Writer
-		if isatty.IsTerminal(os.Stdout.Fd()) {
-			out = colorable.NewColorableStdout()
-		} else if *flagNoColor {
+		if *flagNoColor {
 			out = colorable.NewNonColorable(os.Stdout)
+		} else if isatty.IsTerminal(os.Stdout.Fd()) {
+			out = colorable.NewColorableStdout()
 		} else {
-			out = os.Stdout
+			out = colorable.NewNonColorable(os.Stdout)
 		}
 		needReset := false
 		output = func(fname string, line int, text string, m [][]int) {
