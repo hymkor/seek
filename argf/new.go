@@ -1,7 +1,6 @@
 package argf
 
 import (
-	"bufio"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,11 +8,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattn/go-zglob"
-	"github.com/zetamatta/go-texts/mbcs"
+	"github.com/nyaosorg/go-windows-mbcs"
 )
 
+type Scanner interface {
+	Scan() bool
+	Text() string
+	Err() error
+}
+
 type scanner struct {
-	*bufio.Scanner
+	Scanner
 	files   []string
 	n       int
 	fd      io.ReadCloser
@@ -86,8 +91,7 @@ func (this *scanner) Scan() bool {
 				}
 				this.fd = fd
 			}
-			this.Scanner = bufio.NewScanner(
-				mbcs.NewAutoDetectReader(this.fd, mbcs.ConsoleCP()))
+			this.Scanner = mbcs.NewFilter(this.fd, mbcs.ACP)
 		}
 		this.fnr++
 		if this.Scanner.Scan() {
