@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zetamatta/seek/argf"
+	"github.com/zetamatta/seek/internal/argf"
 )
 
 func main() {
 	r := argf.New()
-	r.OnError = func(err error)error{
-		fmt.Fprintf(os.Stderr,err.Error())
+	r.OnError = func(err error) error {
+		fmt.Fprintf(os.Stderr, err.Error())
 		return nil
 	}
 	for r.Scan() {

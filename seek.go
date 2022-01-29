@@ -15,7 +15,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-zglob"
 
-	"github.com/zetamatta/seek/argf"
+	"github.com/zetamatta/seek/internal/argf"
 )
 
 const (
