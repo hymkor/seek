@@ -3,9 +3,17 @@ seek - color-grep
 
 ```
 Usage: seek [flags...] REGEXP Files...
+  -A int
+        print N lines after matching lines
+  -B int
+        print N lines before matching lines
   -html
         output html
   -i    ignore case
+  -m value
+        multi regular expression
+  -no-color
+        no color
   -r    recursive
 ```
 
