@@ -1,7 +1,7 @@
 {
     "version": "0.2.0",
     "description": "seek - color-grep for ansi/utf8 (Windows)",
-    "homepage": "https://github.com/zetamatta/seek",
+    "homepage": "https://github.com/hymkor/seek",
     "license": "BSD 3-Clause \"New\" or \"Revised\" License",
     "architecture": {
         "32bit": {
