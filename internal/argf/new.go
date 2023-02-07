@@ -1,9 +1,12 @@
 package argf
 
 import (
+	"bufio"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"golang.org/x/text/transform"
 
 	"github.com/pkg/errors"
 
@@ -91,7 +94,7 @@ func (this *scanner) Scan() bool {
 				}
 				this.fd = fd
 			}
-			this.Scanner = mbcs.NewFilter(this.fd, mbcs.ACP)
+			this.Scanner = bufio.NewScanner(transform.NewReader(this.fd, mbcs.AutoDecoder{CP: mbcs.ACP}))
 		}
 		this.fnr++
 		if this.Scanner.Scan() {
